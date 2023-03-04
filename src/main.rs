@@ -28,7 +28,6 @@ unsafe extern "system" fn vulkan_debug_utils_callback(
 }
 
 fn main() {
-
     let engine_name = std::ffi::CString::new("Vulkan Tutorial").unwrap();
     let app_name = std::ffi::CString::new("The Black Window").unwrap();
     let engine_version = vk::make_api_version(0, 1, 0, 0);
@@ -74,12 +73,34 @@ fn main() {
     let instance = unsafe { entry.create_instance(&instance_create_info, None).unwrap() };
 
     let physical_devices = unsafe { instance.enumerate_physical_devices().unwrap() };
-    println!("{}", physical_devices.len());
+
+    let mut graphic_operation_supporting_devices = Vec::<usize>::new();
+    let mut compute_operation_supporting_devices = Vec::<usize>::new();
+    let mut transfer_operation_supporting_devices = Vec::<usize>::new();
+    let mut sparse_binding_operation_supporting_devices = Vec::<usize>::new();
 
     for device in physical_devices {
-        let properties = unsafe { instance.get_physical_device_properties(device) };
-        println!("{:#?}", properties);
+        let queue_properity_vec = unsafe { instance.get_physical_device_queue_family_properties(device) };
+        for (index, queue_properties) in queue_properity_vec.iter().enumerate() {
+            if queue_properties.queue_count > 0 && queue_properties.queue_flags.contains(vk::QueueFlags::GRAPHICS) {
+                graphic_operation_supporting_devices.push(index);
+            }
+            if queue_properties.queue_count > 0 && queue_properties.queue_flags.contains(vk::QueueFlags::COMPUTE) {
+                compute_operation_supporting_devices.push(index);
+            }
+            if queue_properties.queue_count > 0 && queue_properties.queue_flags.contains(vk::QueueFlags::TRANSFER) {
+                transfer_operation_supporting_devices.push(index);
+            }
+            if queue_properties.queue_count > 0 && queue_properties.queue_flags.contains(vk::QueueFlags::SPARSE_BINDING) {
+                sparse_binding_operation_supporting_devices.push(index);
+            }
+        }
     }
+
+    println!("GRAPHICS: {:?}", graphic_operation_supporting_devices);
+    println!("COMPUTE: {:?}", compute_operation_supporting_devices);
+    println!("TRANSFER: {:?}", transfer_operation_supporting_devices);
+    println!("SPARSE_BINDING: {:?}", sparse_binding_operation_supporting_devices);
 
     let debug_utils = ash::extensions::ext::DebugUtils::new(&entry, &instance);
 
