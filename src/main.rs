@@ -27,6 +27,21 @@ unsafe extern "system" fn vulkan_debug_utils_callback(
     vk::FALSE
 }
 
+fn get_queue_indices(instance: &ash::Instance, queue_family: vk::QueueFlags) -> Vec<(vk::PhysicalDevice, u32)> {
+    let mut indices = Vec::<(vk::PhysicalDevice, u32)>::new();
+    let physical_devices = unsafe { instance.enumerate_physical_devices().unwrap() };
+    for physical_device in physical_devices {
+        let queue_family_properties = 
+            unsafe { instance.get_physical_device_queue_family_properties(physical_device) };
+        for (index, properties) in queue_family_properties.iter().enumerate() {
+            if properties.queue_count > 0 && properties.queue_flags.contains(queue_family) {
+                indices.push((physical_device, index as u32));
+            }
+        }
+    }
+    indices
+}
+
 fn main() {
     let engine_name = std::ffi::CString::new("Vulkan Tutorial").unwrap();
     let app_name = std::ffi::CString::new("The Black Window").unwrap();
@@ -72,42 +87,16 @@ fn main() {
 
     let instance = unsafe { entry.create_instance(&instance_create_info, None).unwrap() };
 
-    let physical_devices = unsafe { instance.enumerate_physical_devices().unwrap() };
-
-    let mut graphic_operation_supporting_devices = Vec::<usize>::new();
-    let mut compute_operation_supporting_devices = Vec::<usize>::new();
-    let mut transfer_operation_supporting_devices = Vec::<usize>::new();
-    let mut sparse_binding_operation_supporting_devices = Vec::<usize>::new();
-
-    for device in physical_devices {
-        let queue_properity_vec = unsafe { instance.get_physical_device_queue_family_properties(device) };
-        for (index, queue_properties) in queue_properity_vec.iter().enumerate() {
-            if queue_properties.queue_count > 0 && queue_properties.queue_flags.contains(vk::QueueFlags::GRAPHICS) {
-                graphic_operation_supporting_devices.push(index);
-            }
-            if queue_properties.queue_count > 0 && queue_properties.queue_flags.contains(vk::QueueFlags::COMPUTE) {
-                compute_operation_supporting_devices.push(index);
-            }
-            if queue_properties.queue_count > 0 && queue_properties.queue_flags.contains(vk::QueueFlags::TRANSFER) {
-                transfer_operation_supporting_devices.push(index);
-            }
-            if queue_properties.queue_count > 0 && queue_properties.queue_flags.contains(vk::QueueFlags::SPARSE_BINDING) {
-                sparse_binding_operation_supporting_devices.push(index);
-            }
-        }
-    }
-
-    println!("GRAPHICS: {:?}", graphic_operation_supporting_devices);
-    println!("COMPUTE: {:?}", compute_operation_supporting_devices);
-    println!("TRANSFER: {:?}", transfer_operation_supporting_devices);
-    println!("SPARSE_BINDING: {:?}", sparse_binding_operation_supporting_devices);
+    let indices_1 = get_queue_indices(&instance, vk::QueueFlags::GRAPHICS);
+    let indices_2 = get_queue_indices(&instance, vk::QueueFlags::COMPUTE);
+    println!("{:#?} {:#?}", indices_1, indices_2);
 
     let debug_utils = ash::extensions::ext::DebugUtils::new(&entry, &instance);
 
     let utils_messenger =
         unsafe { debug_utils.create_debug_utils_messenger(&debug_create_info, None).unwrap() };
 
-    unsafe { 
+    unsafe {
         debug_utils.destroy_debug_utils_messenger(utils_messenger, None);
         instance.destroy_instance(None);
     };
