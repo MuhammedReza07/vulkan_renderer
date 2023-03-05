@@ -72,10 +72,6 @@ fn main() {
 
     let instance = unsafe { entry.create_instance(&instance_create_info, None).unwrap() };
 
-    let indices_1 = get_queue_indices(&instance, vk::QueueFlags::GRAPHICS);
-    let indices_2 = get_queue_indices(&instance, vk::QueueFlags::COMPUTE);
-    println!("{:#?} {:#?}", indices_1, indices_2);
-
     let debug_utils = ash::extensions::ext::DebugUtils::new(&entry, &instance);
 
     let utils_messenger =
