@@ -27,21 +27,6 @@ unsafe extern "system" fn vulkan_debug_utils_callback(
     vk::FALSE
 }
 
-fn get_queue_indices(instance: &ash::Instance, queue_family: vk::QueueFlags) -> Vec<(vk::PhysicalDevice, u32)> {
-    let mut indices = Vec::<(vk::PhysicalDevice, u32)>::new();
-    let physical_devices = unsafe { instance.enumerate_physical_devices().unwrap() };
-    for physical_device in physical_devices {
-        let queue_family_properties = 
-            unsafe { instance.get_physical_device_queue_family_properties(physical_device) };
-        for (index, properties) in queue_family_properties.iter().enumerate() {
-            if properties.queue_count > 0 && properties.queue_flags.contains(queue_family) {
-                indices.push((physical_device, index as u32));
-            }
-        }
-    }
-    indices
-}
-
 fn main() {
     let engine_name = std::ffi::CString::new("Vulkan Tutorial").unwrap();
     let app_name = std::ffi::CString::new("The Black Window").unwrap();
